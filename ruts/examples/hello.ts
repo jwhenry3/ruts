@@ -1,4 +1,4 @@
-// rusts hello — TypeScript syntax, Rust output.
+// ruts hello — TypeScript syntax, Rust output.
 
 interface Person {
     name: Str;

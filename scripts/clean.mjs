@@ -8,4 +8,4 @@ function walk(dir) {
     if (e.name === "mod.rs" || existsSync(p.replace(/\.rs$/, ".ts"))) unlinkSync(p);
   }
 }
-for (const dir of ["nestrs/src", "rusts/examples"]) if (existsSync(dir)) walk(dir);
+for (const dir of ["nestrs/src", "ruts/examples"]) if (existsSync(dir)) walk(dir);

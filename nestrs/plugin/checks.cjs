@@ -1,4 +1,4 @@
-// rusts semantic checks — rules TypeScript's checker can't express.
+// ruts semantic checks — rules TypeScript's checker can't express.
 // Shared by the emitter (src/emitter.ts) and the tsserver plugin
 // (plugin/index.cjs). Plain CJS so tsserver can require() it.
 
@@ -36,15 +36,15 @@ function rustIntBaseOfTypeText(text) {
   return INT_SPELLINGS[t];
 }
 
-// Walk the AST and produce the rusts-specific diagnostics the TS checker
+// Walk the AST and produce the ruts-specific diagnostics the TS checker
 // cannot see (it can't inspect literal values). Each diag is a plain object
 // shaped like ts.Diagnostic so both the emitter and the plugin can use it.
-function rustsDiagnostics(sf) {
+function rutsDiagnostics(sf) {
   const diags = [];
   const push = (node, messageText) => diags.push({
     file: sf, start: node.getStart(sf), length: node.getWidth(sf),
     messageText, category: ts.DiagnosticCategory.Error,
-    code: 95001, source: "rusts",
+    code: 95001, source: "ruts",
   });
   const visit = (n) => {
     // let x: Int32 = 1.5  /  let s: Int32[] = [1.5]  /  param/property defaults
@@ -75,9 +75,9 @@ function rustsDiagnostics(sf) {
 }
 
 // ---------- unsupported-construct diagnostics (code 95002) ----------------
-// rusts compiles a TS subset to Rust — these constructs typecheck fine in TS
+// ruts compiles a TS subset to Rust — these constructs typecheck fine in TS
 // but have no Rust equivalent (or no mapping yet). Flag them early so the
-// editor and `rusts check` report them instead of emitting broken Rust.
+// editor and `ruts check` report them instead of emitting broken Rust.
 
 function hasMod2(n, kind) {
   return ts.canHaveModifiers(n) && (ts.getModifiers(n) ?? []).some(m => m.kind === kind);
@@ -97,7 +97,7 @@ function isNullableUnion(u) {
   return nonNull.length === 1 && nonNull.length < u.types.length;
 }
 
-// binding patterns that rusts can destructure (flat, no defaults/rest/nesting)
+// binding patterns that ruts can destructure (flat, no defaults/rest/nesting)
 function bindingOk(pat) {
   return pat.elements.every(el =>
     !ts.isOmittedExpression(el) && !el.dotDotDotToken && !el.initializer &&
@@ -109,7 +109,7 @@ function unsupportedDiagnostics(sf) {
   const push = (node, messageText) => diags.push({
     file: sf, start: node.getStart(sf), length: node.getWidth(sf),
     messageText, category: ts.DiagnosticCategory.Error,
-    code: 95002, source: "rusts",
+    code: 95002, source: "ruts",
   });
   const visit = (n) => {
     if (ts.isUnionTypeNode(n) && !isNullableUnion(n))
@@ -138,7 +138,7 @@ function unsupportedDiagnostics(sf) {
       if (!n.exportClause) push(n, "'export *' is not supported — modules re-export via 'pub use'");
       else for (const el of n.exportClause.elements)
         if (el.name.text === "default")
-          push(el, "rusts has no default exports — the module itself is the default import");
+          push(el, "ruts has no default exports — the module itself is the default import");
     }
     if ((ts.isGetAccessorDeclaration(n) || ts.isSetAccessorDeclaration(n)) &&
         hasMod2(n, ts.SyntaxKind.StaticKeyword))
@@ -196,7 +196,7 @@ function unsupportedDiagnostics(sf) {
 }
 
 function allDiagnostics(sf) {
-  return [...rustsDiagnostics(sf), ...unsupportedDiagnostics(sf)];
+  return [...rutsDiagnostics(sf), ...unsupportedDiagnostics(sf)];
 }
 
-module.exports = { INT_TYPES, INT_SPELLINGS, isFloatLiteralText, unwrapCast, rustIntBaseOfTypeText, rustsDiagnostics, unsupportedDiagnostics, allDiagnostics };
+module.exports = { INT_TYPES, INT_SPELLINGS, isFloatLiteralText, unwrapCast, rustIntBaseOfTypeText, rutsDiagnostics, unsupportedDiagnostics, allDiagnostics };

@@ -1,5 +1,5 @@
-// rusts tsserver plugin for the nestrs project — self-contained copy of
-// rusts/plugin + rusts/src/checks.cjs. Keep in sync when checks change.
+// ruts tsserver plugin for the nestrs project — self-contained copy of
+// ruts/plugin + ruts/src/checks.cjs. Keep in sync when checks change.
 
 const { allDiagnostics } = require("./checks.cjs");
 

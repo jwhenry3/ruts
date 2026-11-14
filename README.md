@@ -1,7 +1,7 @@
-# RUSTS — write NestJS apps in TypeScript syntax, ship them as native Rust
+# RUTS — write NestJS apps in TypeScript syntax, ship them as native Rust
 
-**rusts** is a TypeScript-flavored language that transpiles to plain, idiomatic
-Rust — and **nestrs** is a real NestJS-style application written in rusts,
+**ruts** is a TypeScript-flavored language that transpiles to plain, idiomatic
+Rust — and **nestrs** is a real NestJS-style application written in ruts,
 running on a hand-written `nest` framework crate.
 
 Write modules, dependency injection, controllers, DTOs, guards, interceptors,
@@ -40,10 +40,10 @@ pub fn find_one(&self, c: &mut nest::Ctx) -> Result<serde_json::Value, nest::Err
 ## Quick start
 
 Prereqs: Rust toolchain (`cargo`/`rustc`), a Node new enough to run `.ts`
-files directly (Node 22.6+ / 24), and `npm install` inside `rusts/`.
+files directly (Node 22.6+ / 24), and `npm install` inside `ruts/`.
 
 ```bash
-cd rusts && npm install && cd ..
+cd ruts && npm install && cd ..
 npm run dev        # transpile nestrs/src -> .rs, then cargo run (PORT, default :3000)
 ```
 
@@ -92,27 +92,27 @@ for (const v of ch)   -> for v in ch.rx.iter()
 
 The `.ts` files are real TypeScript to your editor — the flavor comes from
 two ambient declaration files plus a tsserver plugin that adds
-rusts-specific diagnostics live.
+ruts-specific diagnostics live.
 
-1. **Ambient types** (`rusts/types/rusts.d.ts`, `nestrs/types/nest.d.ts`)
+1. **Ambient types** (`ruts/types/ruts.d.ts`, `nestrs/types/nest.d.ts`)
    declare `Int32`, `Ptr<T>`, `Mutex<T>`, `Channel<T>`, the `nest` module,
    and all decorators — no imports needed for decorators.
 2. **tsserver plugin** (`nestrs/plugin`, referenced by
-   `nestrs/tsconfig.json`) surfaces rusts-only checks — e.g.
+   `nestrs/tsconfig.json`) surfaces ruts-only checks — e.g.
    `let x: Int32 = 1.5` (TS95001) and unsupported constructs (TS95002)
-   with `rusts:` messages — as live squiggles.
+   with `ruts:` messages — as live squiggles.
    If squiggles don't appear: restart the TS Server
    (VS Code: `Ctrl+Shift+P` -> "TypeScript: Restart TS Server").
 
 ## Layout
 
 ```
-rusts/                  the transpiler
+ruts/                  the transpiler
 ├── src/emitter.ts      TS AST -> Rust emitter (all the logic)
-├── src/cli.ts          rusts build|check|run <dir>
-├── src/checks.cjs      shared rusts-only diagnostics
+├── src/cli.ts          ruts build|check|run <dir>
+├── src/checks.cjs      shared ruts-only diagnostics
 ├── plugin/             tsserver plugin
-├── types/rusts.d.ts    ambient Rust types
+├── types/ruts.d.ts    ambient Rust types
 └── examples/           hello.ts / concurrency.ts
 
 nestrs/                 the app + framework (cargo workspace)
@@ -120,7 +120,7 @@ nestrs/                 the app + framework (cargo workspace)
 ├── types/nest.d.ts     framework API + decorator declarations
 ├── views/index.html    view template
 ├── plugin/             tsserver plugin copy for this project
-└── src/                rusts sources — FOLDERS ARE RUST MODULES
+└── src/                ruts sources — FOLDERS ARE RUST MODULES
     ├── main.ts             crate root — bootstrap
     ├── app.module.ts       @Module root
     ├── app.controller.ts   @Controller("/") — renders the view
@@ -135,7 +135,7 @@ Generated `.rs` files are gitignored — `npm run build:ts` regenerates.
 
 ```bash
 npm run verify     # typecheck transpiler + examples + transpile app + cargo build
-npm run check      # rusts check nestrs/src — TS + rusts diagnostics, no emit
+npm run check      # ruts check nestrs/src — TS + ruts diagnostics, no emit
 npm run clean      # delete generated .rs siblings of .ts files
 ```
 

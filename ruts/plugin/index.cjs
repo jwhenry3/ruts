@@ -1,4 +1,4 @@
-// rusts tsserver plugin — surfaces rusts-specific diagnostics as live editor
+// ruts tsserver plugin — surfaces ruts-specific diagnostics as live editor
 // squiggles. Plugins can ADD diagnostics but not remove them, so this layers
 // our checks (float literal -> int type, unsupported constructs) on top of the
 // real checker's errors (which already cover branded-type assignability).

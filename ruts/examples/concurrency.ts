@@ -1,4 +1,4 @@
-// rusts concurrency — Channel<T> maps to std::sync::mpsc, spawn() to std::thread.
+// ruts concurrency — Channel<T> maps to std::sync::mpsc, spawn() to std::thread.
 
 const ch = new Channel<Int32>();
 const tx = ch.cloneTx();

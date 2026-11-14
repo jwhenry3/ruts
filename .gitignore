@@ -6,7 +6,7 @@ Cargo.lock
 .DS_Store
 Thumbs.db
 dist/
-# generated rusts output (siblings of .ts sources)
+# generated ruts output (siblings of .ts sources)
 nestrs/src/**/*.rs
 nestrs/src/mod.rs
-rusts/examples/*.rs
+ruts/examples/*.rs

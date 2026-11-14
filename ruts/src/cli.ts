@@ -41,6 +41,6 @@ if (cmd === "build") {
     const { execSync } = await import("node:child_process");
     execSync("cargo run", { cwd: path.resolve(target, ".."), stdio: "inherit" });
 } else {
-    console.error("usage: rusts build|check|run <dir>");
+    console.error("usage: ruts build|check|run <dir>");
     process.exit(1);
 }

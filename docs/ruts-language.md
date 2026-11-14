@@ -1,13 +1,13 @@
-# rusts — language reference
+# ruts — language reference
 
-rusts is a TypeScript-flavored syntax that emits plain Rust. Type annotations
+ruts is a TypeScript-flavored syntax that emits plain Rust. Type annotations
 are Rust types verbatim; the emitter translates syntax, it doesn't add a
 runtime. Anything TS-legal that has no Rust mapping is a compile-time
-diagnostic (code `95002`, `rusts:` prefix) — never silently broken output.
+diagnostic (code `95002`, `ruts:` prefix) — never silently broken output.
 
 ## Type mappings
 
-| rusts type | Rust type |
+| ruts type | Rust type |
 |---|---|
 | `Int32`, `Int` | `i32` |
 | `Int64` | `i64` |
@@ -29,7 +29,7 @@ diagnostic (code `95002`, `rusts:` prefix) — never silently broken output.
 | `T \| null` | `Option<T>` |
 | class / interface | `pub struct` (+ `impl`, `new()`) |
 
-PascalCase numerics are branded (`number & {__rusts:"i32"}`) so `Int32` and
+PascalCase numerics are branded (`number & {__ruts:"i32"}`) so `Int32` and
 `Float64` are nominally distinct — like Rust itself. Brand-to-brand casts
 don't work; use conversion calls: `Int32(x)` → `x as i32`, `Usize(x)` →
 `x as usize`. Literals: `3 as Int32` (erased-ish `as`) or `Int32(3)`.
@@ -56,7 +56,7 @@ findOne(id: Int32): [User, Error | null] {
 
 ## Syntax mapping
 
-| rusts | Rust |
+| ruts | Rust |
 |---|---|
 | `interface` all-fields | `#[derive(Clone,Debug,Default,Serialize,Deserialize)] pub struct` |
 | `class` | `pub struct` + `impl` + `new()` |
@@ -94,7 +94,7 @@ findOne(id: Int32): [User, Error | null] {
 
 ## Diagnostics
 
-Two code ranges, both surfaced by `rusts check` and the tsserver plugin:
+Two code ranges, both surfaced by `ruts check` and the tsserver plugin:
 
 - **95001** — literal-level type rules the TS checker can't see:
   `let x: Int32 = 1.5`, `Int64(1.5)`.

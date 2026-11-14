@@ -2,7 +2,7 @@
 
 `nestrs/nest` is a hand-written Rust crate providing the NestJS runtime
 model: modules, DI, controllers, guards, interceptors, filters, views,
-and a small built-in HTTP server. Generated rusts code calls into it;
+and a small built-in HTTP server. Generated ruts code calls into it;
 it is never generated itself.
 
 ## Decorator catalog (compile-time)

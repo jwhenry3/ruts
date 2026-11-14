@@ -1,13 +1,13 @@
-// rusts — ambient Rust type declarations.
+// ruts — ambient Rust type declarations.
 // These names map 1:1 to Rust types at emit time. Numeric types are branded
 // so i32 and f64 are nominally distinct, like Rust itself.
 
-declare type Int32 = number & { readonly __rusts: "i32" };
-declare type Int64 = number & { readonly __rusts: "i64" };
-declare type Int = number & { readonly __rusts: "i32" };
-declare type Float32 = number & { readonly __rusts: "f32" };
-declare type Float64 = number & { readonly __rusts: "f64" };
-declare type Usize = number & { readonly __rusts: "usize" };
+declare type Int32 = number & { readonly __ruts: "i32" };
+declare type Int64 = number & { readonly __ruts: "i64" };
+declare type Int = number & { readonly __ruts: "i32" };
+declare type Float32 = number & { readonly __ruts: "f32" };
+declare type Float64 = number & { readonly __ruts: "f64" };
+declare type Usize = number & { readonly __ruts: "usize" };
 declare type Bool = boolean;
 declare type Str = string;
 declare type Void = void;
