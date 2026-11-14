@@ -27,6 +27,37 @@ impl std::fmt::Display for Error {
 
 impl std::error::Error for Error {}
 
+// log lines must not panic when stdout is gone (Ctrl+C teardown, closed pipes)
+macro_rules! nlog {
+    ($($arg:tt)*) => { let _ = writeln!(std::io::stdout(), $($arg)*); };
+}
+
+/// console.log — same non-panicking write for generated code.
+pub fn log(msg: impl std::fmt::Display) {
+    let _ = writeln!(std::io::stdout(), "{}", msg);
+}
+
+// graceful shutdown: CTRL_C / CTRL_BREAK prints and exits 0. Other platforms
+// get the OS default (SIGINT terminates) — same as the Go default handler.
+#[cfg(windows)]
+mod shutdown {
+    use std::io::Write;
+    type Handler = unsafe extern "system" fn(u32) -> i32;
+    #[link(name = "kernel32")]
+    extern "system" {
+        fn SetConsoleCtrlHandler(handler: Handler, add: i32) -> i32;
+    }
+    unsafe extern "system" fn on_ctrl(ctrl: u32) -> i32 {
+        // CTRL_C(0) / CTRL_BREAK(1) / CTRL_CLOSE(2)
+        if ctrl <= 2 {
+            nlog!("[nest] shutting down");
+            std::process::exit(0);
+        }
+        0
+    }
+    pub fn install() { unsafe { SetConsoleCtrlHandler(on_ctrl, 1); } }
+}
+
 pub fn bad_request(msg: impl Into<String>) -> Error { Error::new(400, msg) }
 pub fn unauthorized(msg: impl Into<String>) -> Error { Error::new(401, msg) }
 pub fn forbidden(msg: impl Into<String>) -> Error { Error::new(403, msg) }
@@ -55,6 +86,7 @@ pub struct Ctx {
     pub body: Value,
     status: u16,
     views_glob: String,
+    started: Instant,
 }
 
 impl Ctx {
@@ -91,6 +123,10 @@ impl Ctx {
             None => Err(not_found(format!("view '{}' not found", name))),
         }
     }
+
+    pub fn elapsed(&self) -> String {
+        format!("{:?}", self.started.elapsed())
+    }
 }
 
 fn load_view(glob: &str, name: &str) -> Option<String> {
@@ -115,8 +151,10 @@ pub trait Guard: Send + Sync {
     fn check(&self, ctx: &Ctx) -> bool;
 }
 
+pub type Next = Box<dyn FnOnce(&mut Ctx) -> Result<Value, Error>>;
+
 pub trait Interceptor: Send + Sync {
-    fn intercept(&self, ctx: &Ctx);
+    fn intercept(&self, ctx: &mut Ctx, next: Next) -> Result<Value, Error>;
 }
 
 // ---------- Controller / routes ----------
@@ -247,9 +285,18 @@ impl App {
 
     pub fn listen(&self, port: impl AsRef<str>) {
         let routes = collect_routes(&self.module, &self.prefix);
+        let mut mapped: Vec<(&str, String)> = routes.iter()
+            .map(|r| (r.method, format!("/{}", r.segments.join("/"))))
+            .collect();
+        mapped.sort_by(|a, b| a.1.cmp(&b.1).then(a.0.cmp(b.0)));
+        for (m, p) in mapped {
+            nlog!("[nest] mapped {:<7} {}", m, p);
+        }
         let addr = format!("127.0.0.1:{}", port.as_ref().trim_start_matches(':'));
         let listener = TcpListener::bind(&addr).expect("failed to bind");
-        println!("listening on http://{}", addr);
+        nlog!("[nest] application listening on http://{}", addr);
+        #[cfg(windows)]
+        shutdown::install();
         let routes = Arc::new(routes);
         let views = Arc::new(self.views_glob.clone());
         for stream in listener.incoming() {
@@ -338,7 +385,7 @@ fn handle_conn(mut stream: TcpStream, routes: Arc<Vec<FlatRoute>>, views: Arc<St
         Some((route, params)) => {
             let mut ctx = Ctx {
                 method, path, params, query, headers, body,
-                status: 200, views_glob: views.to_string(),
+                status: 200, views_glob: views.to_string(), started: Instant::now(),
             };
             for g in &route.guards {
                 if !g.check(&ctx) {
@@ -346,22 +393,36 @@ fn handle_conn(mut stream: TcpStream, routes: Arc<Vec<FlatRoute>>, views: Arc<St
                     return respond(&mut stream, e.status, &err_body(&e));
                 }
             }
-            let start = Instant::now();
-            for i in &route.interceptors { i.intercept(&ctx); }
             let body_arg = ctx.body.clone();
-            let result = (route.handler)(&mut ctx, body_arg);
-            let _elapsed = start.elapsed();
-            match result {
-                Ok(v) => {
-                    if let Value::String(t) = &v {
-                        if let Some(html) = t.strip_prefix("__html__") {
-                            return respond_html(&mut stream, ctx.status, html);
+            let h = route.handler.clone();
+            let mut next: Next = Box::new(move |c| h(c, body_arg));
+            for i in route.interceptors.iter().rev() {
+                let i = i.clone();
+                let inner = next;
+                next = Box::new(move |c| i.intercept(c, inner));
+            }
+            // interceptors wrap the handler Nest-style; a panic is the
+            // "unhandled error" the default filter logs and maps to 500
+            match std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| next(&mut ctx))) {
+                Ok(result) => match result {
+                    Ok(v) => {
+                        if let Value::String(t) = &v {
+                            if let Some(html) = t.strip_prefix("__html__") {
+                                return respond_html(&mut stream, ctx.status, html);
+                            }
                         }
+                        let s = if v.is_null() { String::new() } else { v.to_string() };
+                        (ctx.status, s)
                     }
-                    let s = if v.is_null() { String::new() } else { v.to_string() };
-                    (ctx.status, s)
+                    Err(e) => (e.status, err_body(&e)),
+                },
+                Err(p) => {
+                    let msg = p.downcast_ref::<String>().map(|s| s.as_str())
+                        .or_else(|| p.downcast_ref::<&str>().copied())
+                        .unwrap_or("panic");
+                    nlog!("[nest] unhandled error on {} {}: {}", ctx.method, ctx.path, msg);
+                    (500, serde_json::json!({"statusCode": 500, "message": "Internal server error"}).to_string())
                 }
-                Err(e) => (e.status, err_body(&e)),
             }
         }
         None => {

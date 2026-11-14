@@ -5,5 +5,4 @@ const app = nest.Create(AppModule);
 app.SetGlobalPrefix("/api");
 app.SetViews("views/*.html");
 const port = nest.envOr("PORT", "3000");
-console.log(`nestrs listening on :${port}`);
 app.Listen(port);

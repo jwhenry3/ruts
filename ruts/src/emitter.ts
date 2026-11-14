@@ -553,8 +553,14 @@ function emitClass(ctx: Ctx, node: ts.ClassDeclaration, sf: ts.SourceFile): stri
             out += "    }\n}\n";
         }
         if (mn === "intercept") {
-            out += `\nimpl nest::Interceptor for ${name} {\n    fn intercept(&self, ctx: &nest::Ctx) {\n`;
-            out += emitMethodBody(ctx, m, false, false, "ctx");
+            out += `\nimpl nest::Interceptor for ${name} {\n    fn intercept(&self, ctx: &mut nest::Ctx, next: nest::Next) -> Result<serde_json::Value, nest::Error> {\n`;
+            ctx.curRetIsResult = true;
+            ctx.curRetFirstIsAny = true;
+            ctx.curRetType = "[Any, Error]";
+            out += emitMethodBody(ctx, m, true, true, "ctx");
+            ctx.curRetIsResult = false;
+            ctx.curRetFirstIsAny = false;
+            ctx.curRetType = "";
             out += "    }\n}\n";
         }
     }
@@ -659,9 +665,11 @@ function emitMethodBody(ctx: Ctx, m: ts.MethodDeclaration, isResult: boolean, fi
     const savedMut = ctx.mut, savedGuards = ctx.guards, savedRenames = ctx.renames;
     collectMut(ctx, [...(m.body?.statements ?? [])]);
     if (ctxParamName) {
-        // trait impls name the param `ctx`; the source calls it something else
+        // trait impls name the params `ctx`/`next`; the source calls them something else
         const srcParam = m.parameters[0]?.name.getText();
         if (srcParam && srcParam !== "ctx") ctx.renames = new Map([[srcParam, "ctx"]]);
+        const srcParam2 = m.parameters[1]?.name.getText();
+        if (srcParam2 && srcParam2 !== "next") (ctx.renames ??= new Map()).set(srcParam2, "next");
     }
     let out = "";
     for (const s of m.body?.statements ?? []) {
@@ -894,9 +902,16 @@ function returnsResultTuple(ctx: Ctx, call: ts.CallExpression): boolean {
     } else if (ts.isIdentifier(callee)) {
         const sym = ctx.checker.getSymbolAtLocation(callee);
         const decl = sym?.declarations?.[0];
-        if (decl && (ts.isFunctionDeclaration(decl) || ts.isMethodDeclaration(decl)) && decl.type) retTxt = decl.type.getText();
+        if (decl && (ts.isFunctionDeclaration(decl) || ts.isMethodDeclaration(decl)) && decl.type) {
+            retTxt = decl.type.getText();
+        } else if (decl && ts.isParameter(decl) && decl.type) {
+            // function-typed param (e.g. an interceptor's `next`) — resolve its
+            // signature's return type text
+            const sigs = ctx.checker.getTypeFromTypeNode(decl.type).getCallSignatures();
+            if (sigs.length > 0) retTxt = ctx.checker.typeToString(sigs[0].getReturnType());
+        }
     }
-    return /^\[.+,\s*Error(\s*\|\s*null)?\]$/.test(retTxt.replace(/\s+/g, " "));
+    return /^\[.+,\s*Error(\s*\|\s*null)?\]$/.test(retTxt.replace(/[\s()]+/g, ""));
 }
 
 function unwrapErr(ctx: Ctx, e: ts.Expression): string {
@@ -1120,7 +1135,7 @@ function emitCall(ctx: Ctx, e: ts.CallExpression, want?: string): string {
         }
         if (objTxt === "console" && m === "log") {
             const fmt = args.map(() => "{}").join(" ");
-            return `println!("${fmt}"${args.length ? ", " + args.join(", ") : ""})`;
+            return `nest::log(format!("${fmt}"${args.length ? ", " + args.join(", ") : ""}))`;
         }
         if (m === "lock") return `${obj}.lock().unwrap()`;
         if (m === "get" && ctx.guards.has(objTxt)) return `*${snake(objTxt)}`;

@@ -1,3 +1,5 @@
+<p align="center"><img src="icon.svg" width="160" alt="ruts — a dirt road with wheel ruts"></p>
+
 # RUTS — write NestJS apps in TypeScript syntax, ship them as native Rust
 
 **ruts** is a TypeScript-flavored language that transpiles to plain, idiomatic

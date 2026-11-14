@@ -42,7 +42,9 @@ nestrs/                  the app + framework (cargo workspace)
 
 ```bash
 # preferred — root package.json scripts (run from repo root)
-npm run dev          # transpile nestrs/src + cargo run (PORT env, default :3000)
+npm run dev          # node scripts/dev.mjs — transpile nestrs/src + cargo run
+                     # (run `node scripts/dev.mjs` directly to dodge cmd's
+                     # "Terminate batch job (Y/N)?" prompt on Ctrl+C)
 npm run build        # transpile + cargo build --manifest-path nestrs/Cargo.toml
 npm run verify       # typecheck + examples + build — the full pipeline
 npm run check        # ruts check nestrs/src (TS + ruts diagnostics)
@@ -121,11 +123,18 @@ Decorators are ambient globals (declared in `nestrs/types/nest.d.ts`).
 
 `nest::create(mod)`, `app.set_global_prefix`, `set_views`, `listen`,
 `Deps::register/get`. `Ctx`: `param`, `param_int` → `(i32, Option<Error>)`,
-`query`, `header`, `status`, `json`, `render`, `body`. `with_guard` /
+`query`, `header`, `status`, `json`, `render`, `body`, `elapsed` →
+`format!("{:?}", Duration)` since ctx creation. `with_guard` /
 `with_interceptor` route opts. Exceptions: `bad_request`, `unauthorized`,
 `forbidden`, `not_found`, `conflict`, `internal` (+ `nest::Error` struct).
 `env_or`. DTO validation: `impl nest::Validatable for X { fn validate }` —
 called on body injection. `nest::Chan<T>`/`chan()` for mpsc.
+Interceptors WRAP the handler: `fn intercept(&self, ctx: &mut Ctx, next:
+nest::Next) -> Result<Value, Error>` where `Next = Box<dyn FnOnce(&mut Ctx) ->
+Result<Value, Error>>` — call `next(ctx)` to run the rest of the pipeline.
+Logging parity with gots: startup prints `[nest] mapped M path` per route +
+`[nest] application listening on http://addr`; a handler panic is caught →
+500 `Internal server error` + `[nest] unhandled error on M P: msg`.
 
 ## Gotchas / known limitations
 

@@ -3,7 +3,7 @@
   "private": true,
   "description": "ruts — a TypeScript-flavored language that transpiles to plain Rust, plus nestrs, a NestJS-style app written in it",
   "scripts": {
-    "dev": "npm run build:ts && cargo run --manifest-path nestrs/Cargo.toml",
+    "dev": "node scripts/dev.mjs",
     "start": "npm run dev",
     "build": "npm run build:ts && cargo build --manifest-path nestrs/Cargo.toml",
     "build:ts": "node ruts/src/cli.ts build nestrs/src",

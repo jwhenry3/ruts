@@ -10,3 +10,4 @@ dist/
 nestrs/src/**/*.rs
 nestrs/src/mod.rs
 ruts/examples/*.rs
+.playwright-mcp/

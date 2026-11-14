@@ -16,7 +16,11 @@ declare module "nest" {
         JSON(v: Any): [Any, Ptr<Error> | null];
         Render(name: Str): [Any, Ptr<Error> | null];
         Body(): Any;
+        Elapsed(): Str;
     }
+
+    // interceptor wrap-chain: `next(c)` invokes the rest of the pipeline
+    export type Next = (c: Ptr<Ctx>) => [Any, Error | null];
 
     export interface App {
         SetGlobalPrefix(prefix: Str): void;
