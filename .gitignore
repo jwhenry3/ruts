@@ -1,0 +1,12 @@
+node_modules/
+target/
+Cargo.lock
+*.tsbuildinfo
+.env*
+.DS_Store
+Thumbs.db
+dist/
+# generated rusts output (siblings of .ts sources)
+nestrs/src/**/*.rs
+nestrs/src/mod.rs
+rusts/examples/*.rs

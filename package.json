@@ -1,0 +1,16 @@
+{
+  "name": "rs-nest",
+  "private": true,
+  "description": "rusts — a TypeScript-flavored language that transpiles to plain Rust, plus nestrs, a NestJS-style app written in it",
+  "scripts": {
+    "dev": "npm run build:ts && cargo run --manifest-path nestrs/Cargo.toml",
+    "start": "npm run dev",
+    "build": "npm run build:ts && cargo build --manifest-path nestrs/Cargo.toml",
+    "build:ts": "node rusts/src/cli.ts build nestrs/src",
+    "check": "node rusts/src/cli.ts check nestrs/src",
+    "typecheck": "cd rusts && npx tsc -p tsconfig.json",
+    "examples": "node rusts/src/cli.ts build rusts/examples",
+    "clean": "node scripts/clean.mjs",
+    "verify": "npm run typecheck && npm run examples && npm run build"
+  }
+}
